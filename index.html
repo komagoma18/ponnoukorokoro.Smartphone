@@ -73,13 +73,13 @@
             text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
         }
 
-        /* 🎮 中央：メインプレイエリア（落とす前が見えやすいように背景を少し暗くマスク） */
+        /* 🎮 中央：メインプレイエリア */
         #game-center {
             width: 100%;
             flex: 1; 
             position: relative;
             z-index: 1;
-            background: rgba(0, 0, 0, 0.35); /* ★背景を少し暗くして半透明キャラを際立たせる */
+            background: rgba(0, 0, 0, 0.35); 
             backdrop-filter: blur(1px);
             -webkit-backdrop-filter: blur(1px);
             box-shadow: inset 0 0 40px rgba(0,0,0,0.4);
@@ -190,10 +190,10 @@
             transition: opacity 0.5s ease; 
         }
         
-        /* ロゴの配置（少し上に設置） */
+        /* 🛠️ ロゴの配置：さらに上に引き上げ、すっきり配置 */
         .logo-container {
-            margin-top: 10%; 
-            height: 110px;
+            margin-top: 8%; /* 少し上に詰める */
+            height: 90px;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -212,20 +212,19 @@
             text-shadow: 3px 3px 0 #000, -3px 3px 0 #000, 3px -3px 0 #000, -3px -3px 0 #000;
         }
 
-        /* ★【新規】スタート画面専用：円形の進化の輪スタイル */
+        /* 🛠️ スタート画面専用：円形の進化の輪（画面中央よりほんの少し上になるよう調整） */
         #start-evolution-circle {
-            width: 170px;
-            height: 170px;
+            width: 175px;
+            height: 175px;
             background: rgba(0, 0, 0, 0.65); 
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
             border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 50%;
             position: relative;
-            margin-top: 25px; /* ロゴとの間隔 */
+            margin-top: 45px; /* ★ロゴとの間隔をさらに開けました */
             box-shadow: 0 8px 25px rgba(0,0,0,0.5);
         }
-        /* 円形用の大きめアイテム設定 */
         #start-evolution-circle .evo-item {
             width: 28px;
             height: 28px;
@@ -234,9 +233,9 @@
             font-size: 16px;
         }
 
-        /* スタートボタンの配置（輪っかのすぐ下に配置） */
+        /* 🛠️ スタートボタンの配置：輪っかのすぐ下の心地いい間隔に */
         .start-btn-container { 
-            margin-top: 30px; 
+            margin-top: 40px; 
         }
 
         @keyframes fuwafuwa {
@@ -296,6 +295,7 @@
 <div id="game-layout">
     <div id="blackout-overlay"></div>
 
+    <!-- 上部エリア -->
     <div id="top-sidebar">
         <div class="panel">
             <span class="panel-title">SCORE</span>
@@ -307,8 +307,10 @@
         </div>
     </div>
 
+    <!-- 中央ゲーム本箱 -->
     <div id="game-center"></div>
 
+    <!-- 下部エリア（プレイ中） -->
     <div id="bottom-sidebar">
         <div class="panel" id="next-panel">
             <div id="next-title">NEXT</div>
@@ -318,15 +320,18 @@
         </div>
         
         <div id="evolution-panel">
-            </div>
+            <!-- プレイ中用の横並びバー -->
+        </div>
     </div>
 
+    <!-- スタート画面 -->
     <div id="start-screen">
         <div class="logo-container">
             <img class="game-logo-img" src="logo.png" alt="かめマージ！" onerror="this.style.display='none'; document.getElementById('backup-logo').style.display='block';">
             <div id="backup-logo" class="game-logo-text" style="display:none;">かめマージ！</div>
         </div>
         
+        <!-- 円形の「進化の輪」 -->
         <div id="start-evolution-circle"></div>
 
         <div class="start-btn-container">
@@ -334,6 +339,7 @@
         </div>
     </div>
 
+    <!-- ゲームオーバー画面 -->
     <div id="gameover-screen">
         <h1 style="color: #fff; font-size: 38px; text-shadow: 2px 2px 0 #000; margin-bottom: 10px;">GAME OVER</h1>
         <div style="color: #f1c40f; font-size: 26px; font-weight: bold; margin-bottom: 30px; text-shadow: 2px 2px 0 #000;">
@@ -424,7 +430,7 @@ function loadItemVertices() {
     }
 }
 
-// 🧭 プレイ中用の「横一列」進化図を生成
+// 🧭 プレイ中用の「横一列」進化図
 function createPlayBarUI() {
     const panel = document.getElementById('evolution-panel');
     panel.innerHTML = ''; 
@@ -452,17 +458,16 @@ function createPlayBarUI() {
     }
 }
 
-// 🎬 ★【新規】スタート画面用の「まるい輪っか」進化図を生成する関数
+// 🎬 スタート画面用の「まるい輪っか」進化図
 function createStartCircleUI() {
     const circle = document.getElementById('start-evolution-circle');
     circle.innerHTML = ''; 
     
-    const radius = 60;      // 円の半径
-    const centerX = 85;     // 円の中心X座標 (170px の半分)
-    const centerY = 85;     // 円の中心Y座標
+    const radius = 62;      
+    const centerX = 87.5;   
+    const centerY = 87.5;   
     
     for (let i = 0; i <= MAX_LEVEL; i++) {
-        // 時計回りに綺麗に等間隔で並べる計算 (-Math.PI / 2 で真上からスタート)
         const angle = (i / (MAX_LEVEL + 1)) * Math.PI * 2 - Math.PI / 2;
         const x = centerX + radius * Math.cos(angle);
         const y = centerY + radius * Math.sin(angle);
@@ -479,7 +484,6 @@ function createStartCircleUI() {
         }
         circle.appendChild(itemEl);
         
-        // アイテムとアイテムの間に矢印を配置
         const nextAngle = ((i + 0.5) / (MAX_LEVEL + 1)) * Math.PI * 2 - Math.PI / 2;
         const ax = centerX + radius * Math.cos(nextAngle);
         const ay = centerY + radius * Math.sin(nextAngle);
@@ -488,7 +492,6 @@ function createStartCircleUI() {
         arrowEl.style.left = `${ax}px`;
         arrowEl.style.top = `${ay}px`;
         arrowEl.innerText = '→';
-        // 矢印の向きを進化の円形に合わせて回転
         arrowEl.style.transform = `translate(-50%, -50%) rotate(${nextAngle + Math.PI/2}rad)`;
         circle.appendChild(arrowEl);
     }
@@ -496,7 +499,7 @@ function createStartCircleUI() {
 
 loadItemVertices();
 createPlayBarUI();
-createStartCircleUI(); // スタート画面の輪っかを生成
+createStartCircleUI(); 
 
 let currentType = 0;
 let nextType = 0;
