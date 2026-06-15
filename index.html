@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-select=none, viewport-fit=cover">
-    <title>タートルマージゲーム - スマホ完全最適化版</title>
+    <title>タートルマージゲーム - スマホ版</title>
     <style>
         body {
             margin: 0;
@@ -171,7 +171,7 @@
             transform: translate(-50%, -50%);
         }
 
-        /* 🎬 スタート画面 */
+        /* 🎬 スタート画面（中央揃えのベースを強化） */
         #start-screen {
             position: absolute;
             top: 0;
@@ -184,15 +184,16 @@
             background-color: #2c3e50;
             display: flex;
             flex-direction: column;
-            justify-content: flex-start; 
+            justify-content: center; /* ★要素全体を画面の縦中央に集める */
             align-items: center;
             z-index: 200; 
             transition: opacity 0.5s ease; 
         }
         
-        /* 🛠️ ロゴの配置：さらに上に引き上げ、すっきり配置 */
+        /* 🛠️ ロゴの配置：上部の被りを回避するため引き下げ、マージンを調整 */
         .logo-container {
-            margin-top: 8%; /* 少し上に詰める */
+            margin-top: 0; 
+            margin-bottom: 35px; /* 進化の輪との心地よい間隔 */
             height: 90px;
             display: flex;
             justify-content: center;
@@ -212,7 +213,7 @@
             text-shadow: 3px 3px 0 #000, -3px 3px 0 #000, 3px -3px 0 #000, -3px -3px 0 #000;
         }
 
-        /* 🛠️ スタート画面専用：円形の進化の輪（画面中央よりほんの少し上になるよう調整） */
+        /* 🛠️ 進化の輪：画面の真ん中に中心が来るように配置 */
         #start-evolution-circle {
             width: 175px;
             height: 175px;
@@ -222,8 +223,8 @@
             border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 50%;
             position: relative;
-            margin-top: 45px; /* ★ロゴとの間隔をさらに開けました */
             box-shadow: 0 8px 25px rgba(0,0,0,0.5);
+            margin: 0 auto; /* 上下の無駄な引っ張りをリセット */
         }
         #start-evolution-circle .evo-item {
             width: 28px;
@@ -233,9 +234,10 @@
             font-size: 16px;
         }
 
-        /* 🛠️ スタートボタンの配置：輪っかのすぐ下の心地いい間隔に */
+        /* 🛠️ スタートボタンの配置：輪っかの下に綺麗に並べる */
         .start-btn-container { 
             margin-top: 40px; 
+            margin-bottom: 0;
         }
 
         @keyframes fuwafuwa {
