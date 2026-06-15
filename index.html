@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-select=none, viewport-fit=cover">
+    <title>タートルマージゲーム - スマホ専用版</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #111;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none; /* スマホ特有のスクロールやダブルタップを完全無効化 */
+        }
+        
+        /* 📱 スマホの画面いっぱいに広がる縦長レイアウト */
+        #game-layout {
+            display: flex;
+            flex-direction: column; 
+            width: 100vw;
+            height: 100vh;
+            background-image: url('bg.png');
+            background-size: cover;
+            background-position: center;
+            background-color: #2c3e50;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* 👑 上部：スコア＆ベストスコアエリア（横並びでスマートに） */
+        #top-sidebar {
+            display: flex;
+            width: 100%;
+            height: 70px;
+            padding: 10px 12px 5px 12px;
+            justify-content: space-between;
+            box-sizing: border-box;
+            z-index: 2;
+        }
+        
+        .panel {
+            background: rgba(0, 0, 0, 0.55); 
+            backdrop-filter: blur(6px);      
+            -webkit-backdrop-filter: blur(6px);
+            border: 1px solid rgba(255, 255, 255, 0.15); 
+            border-radius: 12px;
+            width: 48%;
+            height: 55px;
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            color: white;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            box-sizing: border-box;
+        }
+        .panel-title {
+            font-size: 11px;
+            color: #ccc;
+            font-weight: bold;
+            letter-spacing: 1px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+        }
+        .panel-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #f1c40f;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
+        }
+
+        /* 🎮 中央：ゲームのメインプレイエリア（縦に限界まで広げる） */
+        #game-center {
+            width: 100%;
+            flex: 1; 
+            position: relative;
+            z-index: 1;
+            background: rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(1px);
+            -webkit-backdrop-filter: blur(1px);
+            box-shadow: inset 0 0 30px rgba(0,0,0,0.2);
+        }
+        #game-center canvas {
+            display: block;
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        /* 🧭 下部：NEXT＆進化の輪バー（コンパクトに一列配置） */
+        #bottom-sidebar {
+            display: flex;
+            width: 100%;
+            height: 90px;
+            padding: 5px 12px 15px 12px;
+            justify-content: space-between;
+            align-items: center;
+            box-sizing: border-box;
+            z-index: 2;
+        }
+        
+        #next-panel { 
+            width: 28%;
+            height: 70px;
+            flex-direction: column;
+            justify-content: center;
+        }
+        #next-title {
+            font-size: 10px;
+            color: #ccc;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 2px;
+        }
+        #next-preview-slot {
+            width: 42px;
+            height: 42px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.1); 
+            border-radius: 8px;
+        }
+        #next-img {
+            max-width: 85%;
+            max-height: 85%;
+            object-fit: contain;
+        }
+
+        /* スマホ専用の横並び進化図 */
+        #evolution-panel {
+            width: 68%;
+            height: 70px;
+            background: rgba(0, 0, 0, 0.55); 
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            position: relative;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        .evo-item {
+            position: absolute;
+            width: 22px; 
+            height: 22px;
+            transform: translate(-50%, -50%);
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .evo-secret {
+            font-size: 14px;
+            font-weight: bold;
+            color: #e74c3c;
+            line-height: 1;
+        }
+        .evo-arrow {
+            position: absolute;
+            font-size: 9px;
+            color: rgba(255, 255, 255, 0.4);
+            font-weight: bold;
+            transform: translate(-50%, -50%);
+        }
+
+        /* 🎬 スタート画面 */
+        #start-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('start_bg.png'), url('bg.png'); 
+            background-size: cover;
+            background-position: center;
+            background-color: #2c3e50;
+            display: flex;
+            flex-direction: column;
+            justify-content: center; 
+            align-items: center;
+            z-index: 200; 
+            transition: opacity 0.5s ease; 
+        }
+        .logo-container {
+            height: 130px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            animation: fuwafuwa 2.6s ease-in-out infinite;
+        }
+        .game-logo-img {
+            max-width: 85%;
+            max-height: 130px;
+            object-fit: contain;
+        }
+        .game-logo-text {
+            color: #fff;
+            font-size: 42px;
+            font-weight: 900;
+            letter-spacing: 4px;
+            text-shadow: 2px 2px 0 #000, -2px 2px 0 #000, 2px -2px 0 #000, -2px -2px 0 #000;
+        }
+        .start-btn-container { margin-top: 40px; }
+
+        @keyframes fuwafuwa {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); } 
+            100% { transform: translateY(0px); }
+        }
+
+        /* 暗転レイヤー */
+        #blackout-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000000;
+            z-index: 300; 
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        /* 💀 ゲームオーバー画面 */
+        #gameover-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .btn {
+            padding: 14px 45px;
+            font-size: 20px;
+            font-weight: bold;
+            color: white;
+            background: #e74c3c;
+            border: 3px solid #ffffff;
+            border-radius: 40px;
+            cursor: pointer;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/poly-decomp/0.3.0/poly-decomp.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+</head>
+<body>
+
+<div id="game-layout">
+    <div id="blackout-overlay"></div>
+
+    <div id="top-sidebar">
+        <div class="panel">
+            <span class="panel-title">SCORE</span>
+            <span class="panel-value" id="score">0</span>
+        </div>
+        <div class="panel">
+            <span class="panel-title">BEST</span>
+            <span class="panel-value" id="best-score">0</span>
+        </div>
+    </div>
+
+    <div id="game-center"></div>
+
+    <div id="bottom-sidebar">
+        <div class="panel" id="next-panel">
+            <div id="next-title">NEXT</div>
+            <div id="next-preview-slot">
+                <img id="next-img" src="" alt="next">
+            </div>
+        </div>
+        
+        <div id="evolution-panel">
+            </div>
+    </div>
+
+    <div id="start-screen">
+        <div class="logo-container">
+            <img class="game-logo-img" src="logo.png" alt="かめマージ！" onerror="this.style.display='none'; document.getElementById('backup-logo').style.display='block';">
+            <div id="backup-logo" class="game-logo-text" style="display:none;">かめマージ！</div>
+        </div>
+        <div class="start-btn-container">
+            <button class="btn" id="start-btn">GAME START</button>
+        </div>
+    </div>
+
+    <div id="gameover-screen">
+        <h1 style="color: #fff; font-size: 38px; text-shadow: 2px 2px 0 #000; margin-bottom: 10px;">GAME OVER</h1>
+        <div style="color: #f1c40f; font-size: 26px; font-weight: bold; margin-bottom: 30px; text-shadow: 2px 2px 0 #000;">
+            SCORE: <span id="final-score">0</span>
+        </div>
+        <button class="btn" id="retry-btn">もう一度遊ぶ</button>
+    </div>
+</div>
+
+<script>
+const { Engine, Render, Runner, Bodies, Composite, Body, Events, Vertices } = Matter;
+
+// ゲーム内部解像度
+const WIDTH = 500; 
+const HEIGHT = 600; 
+const DEADLINE_Y = 130; 
+const PLAY_AREA_HEIGHT = 450; 
+
+const container = document.getElementById('game-center');
+let score = 0;
+let bestScore = localStorage.getItem('turtle_best_score') || 0;
+let gameStarted = false;
+let gameOver = false;
+let deadlineTimer = null;
+
+document.getElementById('best-score').innerText = bestScore;
+
+const MAX_LEVEL = 8; 
+const GAME_ITEMS = [];
+
+for (let i = 0; i <= MAX_LEVEL; i++) {
+    GAME_ITEMS.push({
+        size: 30 + i * 18,   
+        score: (i + 1) * 2,
+        image: `${i}.png`,
+        vertices: null
+    });
+}
+
+const engine = Engine.create({ constraintIterations: 3 });
+const world = engine.world;
+
+const render = Render.create({
+    element: container,
+    engine: engine,
+    options: {
+        width: WIDTH,
+        height: HEIGHT,
+        background: 'transparent', 
+        wireframes: false
+    }
+});
+Render.run(render);
+const runner = Runner.create();
+
+// スマホ画面に合わせた細い境界線
+const wallOptions = { isStatic: true, render: { fillStyle: 'rgba(255, 255, 255, 0.25)' } };
+const ground = Bodies.rectangle(WIDTH / 2, HEIGHT - 10, WIDTH, 20, wallOptions);
+const leftWall = Bodies.rectangle(10, HEIGHT - (PLAY_AREA_HEIGHT/2) - 10, 20, PLAY_AREA_HEIGHT, wallOptions);
+const rightWall = Bodies.rectangle(WIDTH - 10, HEIGHT - (PLAY_AREA_HEIGHT/2) - 10, 20, PLAY_AREA_HEIGHT, wallOptions);
+Composite.add(world, [ground, leftWall, rightWall]);
+
+Events.on(render, 'afterRender', () => {
+    const context = render.context;
+    context.beginPath();
+    context.setLineDash([5, 5]);
+    context.moveTo(10, DEADLINE_Y);
+    context.lineTo(WIDTH - 10, DEADLINE_Y);
+    context.lineWidth = 3;
+    context.strokeStyle = gameOver ? '#c0392b' : '#e74c3c';
+    context.stroke();
+    context.setLineDash([]);
+});
+
+function loadItemVertices() {
+    for (let i = 0; i <= MAX_LEVEL; i++) {
+        const item = GAME_ITEMS[i];
+        const sides = 5 + i; 
+        const radius = item.size / 2;
+        
+        let verticesArray = [];
+        for (let j = 0; j < sides; j++) {
+            const angle = (j / sides) * Math.PI * 2;
+            const currentRadius = radius * (0.92 + Math.random() * 0.04); 
+            const x = Math.cos(angle) * currentRadius;
+            const y = Math.sin(angle) * currentRadius;
+            verticesArray.push({ x: x, y: y });
+        }
+        item.vertices = verticesArray;
+    }
+}
+
+// 下部にスッキリ並ぶスマホ専用の進化図
+function createEvolutionUI() {
+    const circle = document.getElementById('evolution-panel');
+    circle.innerHTML = ''; 
+    
+    for (let i = 0; i <= MAX_LEVEL; i++) {
+        const itemEl = document.createElement('div');
+        itemEl.className = 'evo-item';
+        itemEl.style.top = '50%';
+        itemEl.style.left = `${12 + i * 10.5}%`;
+        
+        if (i === MAX_LEVEL) {
+            itemEl.innerHTML = '<span class="evo-secret">❓</span>';
+        } else {
+            itemEl.style.backgroundImage = `url('${GAME_ITEMS[i].image}')`;
+        }
+        circle.appendChild(itemEl);
+        
+        if (i < MAX_LEVEL) {
+            const arrowEl = document.createElement('div');
+            arrowEl.className = 'evo-arrow';
+            arrowEl.style.top = '50%';
+            arrowEl.style.left = `${12 + i * 10.5 + 5.25}%`;
+            arrowEl.innerText = '→';
+            circle.appendChild(arrowEl);
+        }
+    }
+}
+
+loadItemVertices();
+createEvolutionUI();
+
+let currentType = 0;
+let nextType = 0;
+let canDrop = true;
+
+function updateNextUI() {
+    document.getElementById('next-img').src = GAME_ITEMS[nextType].image;
+}
+
+// 画面タッチの横座標をゲーム内の500px幅に正確に変換
+function getGameX(clientX) {
+    const rect = render.canvas.getBoundingClientRect();
+    const scaleX = WIDTH / rect.width; 
+    return (clientX - rect.left) * scaleX;
+}
+
+function createPreviewItem(gameX) {
+    if (!gameStarted || gameOver) return;
+    const radius = GAME_ITEMS[currentType].size / 2;
+    const minX = 20 + radius;
+    const maxX = WIDTH - 20 - radius;
+    const targetX = Math.max(minX, Math.min(maxX, gameX));
+
+    if (window.previewBody) Composite.remove(world, window.previewBody);
+
+    window.previewBody = Bodies.fromVertices(targetX, DEADLINE_Y - 40, GAME_ITEMS[currentType].vertices, {
+        isStatic: true,
+        isSensor: true,
+        render: {
+            sprite: {
+                texture: GAME_ITEMS[currentType].image,
+                xScale: GAME_ITEMS[currentType].size / 500,
+                yScale: GAME_ITEMS[currentType].size / 500
+            },
+            opacity: 0.6
+        }
+    });
+    Composite.add(world, window.previewBody);
+}
+
+function handleMove(clientX) {
+    const rect = render.canvas.getBoundingClientRect();
+    if (clientX >= rect.left && clientX <= rect.right) {
+        createPreviewItem(getGameX(clientX));
+    }
+}
+
+function handleDrop(clientX) {
+    if (!gameStarted || gameOver || !canDrop) return;
+    const rect = render.canvas.getBoundingClientRect();
+    if (clientX < rect.left || clientX > rect.right) return;
+
+    canDrop = false;
+    if (window.previewBody) Composite.remove(world, window.previewBody);
+
+    const gameX = getGameX(clientX);
+    const radius = GAME_ITEMS[currentType].size / 2;
+    const minX = 20 + radius;
+    const maxX = WIDTH - 20 - radius;
+    const dropX = Math.max(minX, Math.min(maxX, gameX));
+
+    const item = Bodies.fromVertices(dropX, DEADLINE_Y - 40, GAME_ITEMS[currentType].vertices, {
+        restitution: 0.1,
+        friction: 0.2,
+        render: {
+            sprite: {
+                texture: GAME_ITEMS[currentType].image,
+                xScale: GAME_ITEMS[currentType].size / 500,
+                yScale: GAME_ITEMS[currentType].size / 500
+            }
+        }
+    });
+    item.gameType = currentType;
+    Composite.add(world, item);
+
+    setTimeout(() => {
+        if (gameOver) return;
+        currentType = nextType; 
+        nextType = Math.floor(Math.random() * 3); 
+        updateNextUI();
+        createPreviewItem(dropX);
+        canDrop = true;
+    }, 500);
+}
+
+// スマホのタッチ操作に完全統一
+window.addEventListener('touchmove', (e) => {
+    if(e.touches.length > 0) handleMove(e.touches[0].clientX);
+});
+
+window.addEventListener('touchend', (e) => {
+    if(e.changedTouches.length > 0) handleDrop(e.changedTouches[0].clientX);
+});
+
+// 念のためPCブラウザのシミュレータでも動くようにマウスも残す
+window.addEventListener('mousemove', (e) => handleMove(e.clientX));
+window.addEventListener('click', (e) => handleDrop(e.clientX));
+
+// 衝突合体
+Events.on(engine, 'collisionStart', (event) => {
+    event.pairs.forEach((pair) => {
+        const bodyA = pair.bodyA;
+        const bodyB = pair.bodyB;
+
+        if (bodyA.gameType !== undefined && bodyB.gameType !== undefined && bodyA.gameType === bodyB.gameType) {
+            const currentLevel = bodyA.gameType;
+            if (currentLevel >= MAX_LEVEL) return;
+
+            const newX = (bodyA.position.x + bodyB.position.x) / 2;
+            const newY = (bodyA.position.y + bodyB.position.y) / 2;
+
+            Composite.remove(world, [bodyA, bodyB]);
+
+            score += GAME_ITEMS[currentLevel].score;
+            document.getElementById('score').innerText = score;
+
+            if (score > bestScore) {
+                bestScore = score;
+                document.getElementById('best-score').innerText = bestScore;
+                localStorage.setItem('turtle_best_score', bestScore);
+            }
+
+            const nextLevel = currentLevel + 1;
+            const upgradedItem = Bodies.fromVertices(newX, newY, GAME_ITEMS[nextLevel].vertices, {
+                restitution: 0.1,
+                friction: 0.2,
+                render: {
+                    sprite: {
+                        texture: GAME_ITEMS[nextLevel].image,
+                        xScale: GAME_ITEMS[nextLevel].size / 500,
+                        yScale: GAME_ITEMS[nextLevel].size / 500
+                    }
+                }
+            });
+            upgradedItem.gameType = nextLevel;
+            Body.setVelocity(upgradedItem, { x: (Math.random() - 0.5) * 2, y: -3 });
+            Composite.add(world, upgradedItem);
+        }
+    });
+});
+
+// ゲームオーバー監視
+Events.on(engine, 'afterUpdate', () => {
+    if (!gameStarted || gameOver) return;
+
+    let isOverLine = false;
+    const allBodies = Composite.allBodies(world);
+
+    for (let body of allBodies) {
+        if (!body.isStatic && body.gameType !== undefined) {
+            const radius = GAME_ITEMS[body.gameType].size / 2;
+            if (body.position.y - radius < DEADLINE_Y) {
+                isOverLine = true;
+                break;
+            }
+        }
+    }
+
+    if (isOverLine) {
+        if (!deadlineTimer) {
+            deadlineTimer = setTimeout(() => { triggerGameOver(); }, 3000);
+        }
+    } else {
+        if (deadlineTimer) {
+            clearTimeout(deadlineTimer);
+            deadlineTimer = null;
+        }
+    }
+});
+
+function triggerGameOver() {
+    gameOver = true;
+    if (window.previewBody) Composite.remove(world, window.previewBody);
+    
+    document.getElementById('final-score').innerText = score;
+    const goScreen = document.getElementById('gameover-screen');
+    goScreen.style.display = 'flex';
+    setTimeout(() => { goScreen.style.opacity = '1'; }, 10);
+    Runner.stop(runner);
+}
+
+// ボタンの誤爆を防ぐ設定
+document.getElementById('start-btn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    const blackout = document.getElementById('blackout-overlay');
+    const startScreen = document.getElementById('start-screen');
+    
+    blackout.style.opacity = '1';
+    
+    setTimeout(() => {
+        gameStarted = true;
+        startScreen.style.display = 'none'; 
+        
+        Runner.run(runner, engine);
+        currentType = Math.floor(Math.random() * 3);
+        nextType = Math.floor(Math.random() * 3);
+        updateNextUI();
+        createPreviewItem(WIDTH / 2);
+        
+        blackout.style.opacity = '0';
+    }, 400);
+});
+
+document.getElementById('retry-btn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    const allBodies = Composite.allBodies(world);
+    allBodies.forEach(body => {
+        if (!body.isStatic) Composite.remove(world, body);
+    });
+
+    score = 0;
+    document.getElementById('score').innerText = '0';
+    gameOver = false;
+    deadlineTimer = null;
+
+    const goScreen = document.getElementById('gameover-screen');
+    goScreen.style.opacity = '0';
+    setTimeout(() => { goScreen.style.display = 'none'; }, 300);
+
+    Runner.run(runner, engine);
+    currentType = Math.floor(Math.random() * 3);
+    nextType = Math.floor(Math.random() * 3);
+    updateNextUI();
+    createPreviewItem(WIDTH / 2);
+    canDrop = true;
+});
+</script>
+
+</body>
+</html>
