@@ -73,23 +73,25 @@
             text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
         }
 
-        /* 🎮 中央：メインプレイエリア */
+        /* 🎮 中央：メインプレイエリア（落とす前が見えやすいように背景を少し暗くマスク） */
         #game-center {
             width: 100%;
             flex: 1; 
             position: relative;
             z-index: 1;
-            background: rgba(255, 255, 255, 0.03);
-            box-shadow: inset 0 0 30px rgba(0,0,0,0.2);
+            background: rgba(0, 0, 0, 0.35); /* ★背景を少し暗くして半透明キャラを際立たせる */
+            backdrop-filter: blur(1px);
+            -webkit-backdrop-filter: blur(1px);
+            box-shadow: inset 0 0 40px rgba(0,0,0,0.4);
         }
         #game-center canvas {
             display: block;
             width: 100% !important;
             height: 100% !important;
-            object-fit: contain; /* 画像が絶対に歪まないように保護 */
+            object-fit: contain;
         }
 
-        /* 🧭 下部：NEXT＆進化の輪バー */
+        /* 🧭 下部：NEXT＆進化の輪バー（プレイ中） */
         #bottom-sidebar {
             display: flex;
             width: 100%;
@@ -130,8 +132,8 @@
             object-fit: contain;
         }
 
-        /* スマホ用横並び進化図（共通クラス化して複数設置可能に） */
-        .evolution-panel-style {
+        /* プレイ中用の下部横並び進化図 */
+        #evolution-panel {
             width: 70%;
             height: 65px;
             background: rgba(0, 0, 0, 0.6); 
@@ -142,6 +144,8 @@
             position: relative;
             box-shadow: 0 4px 15px rgba(0,0,0,0.3);
         }
+
+        /* 進化アイテムの共通スタイル */
         .evo-item {
             position: absolute;
             width: 22px; 
@@ -167,7 +171,7 @@
             transform: translate(-50%, -50%);
         }
 
-        /* 🎬 スタート画面（レイアウトを上寄りに再構成） */
+        /* 🎬 スタート画面 */
         #start-screen {
             position: absolute;
             top: 0;
@@ -180,15 +184,15 @@
             background-color: #2c3e50;
             display: flex;
             flex-direction: column;
-            justify-content: flex-start; /* 上詰めに変更 */
+            justify-content: flex-start; 
             align-items: center;
             z-index: 200; 
             transition: opacity 0.5s ease; 
         }
         
-        /* ロゴの配置（より上へ、より大きく） */
+        /* ロゴの配置（少し上に設置） */
         .logo-container {
-            margin-top: 12%; /* 上部に程よい余白 */
+            margin-top: 10%; 
             height: 110px;
             display: flex;
             justify-content: center;
@@ -196,7 +200,7 @@
             animation: fuwafuwa 2.6s ease-in-out infinite;
         }
         .game-logo-img {
-            width: 300px; /* 一回り大きく固定 */
+            width: 300px; 
             height: auto;
             object-fit: contain;
         }
@@ -208,15 +212,31 @@
             text-shadow: 3px 3px 0 #000, -3px 3px 0 #000, 3px -3px 0 #000, -3px -3px 0 #000;
         }
 
-        /* スタート画面用の進化の輪配置 */
-        #start-evo-container {
-            width: 85%;
-            height: 65px;
-            margin-top: 25px;
+        /* ★【新規】スタート画面専用：円形の進化の輪スタイル */
+        #start-evolution-circle {
+            width: 170px;
+            height: 170px;
+            background: rgba(0, 0, 0, 0.65); 
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            position: relative;
+            margin-top: 25px; /* ロゴとの間隔 */
+            box-shadow: 0 8px 25px rgba(0,0,0,0.5);
+        }
+        /* 円形用の大きめアイテム設定 */
+        #start-evolution-circle .evo-item {
+            width: 28px;
+            height: 28px;
+        }
+        #start-evolution-circle .evo-secret {
+            font-size: 16px;
         }
 
+        /* スタートボタンの配置（輪っかのすぐ下に配置） */
         .start-btn-container { 
-            margin-top: 45px; 
+            margin-top: 30px; 
         }
 
         @keyframes fuwafuwa {
@@ -297,7 +317,7 @@
             </div>
         </div>
         
-        <div id="evolution-panel" class="evolution-panel-style">
+        <div id="evolution-panel">
             </div>
     </div>
 
@@ -307,7 +327,7 @@
             <div id="backup-logo" class="game-logo-text" style="display:none;">かめマージ！</div>
         </div>
         
-        <div id="start-evo-container" class="evolution-panel-style"></div>
+        <div id="start-evolution-circle"></div>
 
         <div class="start-btn-container">
             <button class="btn" id="start-btn">GAME START</button>
@@ -326,7 +346,6 @@
 <script>
 const { Engine, Render, Runner, Bodies, Composite, Body, Events, Vertices } = Matter;
 
-// 📱 【解像度最適化】スマホの縦長画面比率に完全に合わせ、歪みを防止
 const WIDTH = 375; 
 const HEIGHT = 600; 
 const DEADLINE_Y = 120; 
@@ -344,10 +363,9 @@ document.getElementById('best-score').innerText = bestScore;
 const MAX_LEVEL = 8; 
 const GAME_ITEMS = [];
 
-// 【サイズ調整】歪み解消に伴い、カメたちの初期サイズ感を適正化
 for (let i = 0; i <= MAX_LEVEL; i++) {
     GAME_ITEMS.push({
-        size: 36 + i * 22,   /* 小さすぎず、画面内に収まるベストな大きさに調整 */
+        size: 36 + i * 22,   
         score: (i + 1) * 2,
         image: `${i}.png`,
         vertices: null
@@ -406,16 +424,15 @@ function loadItemVertices() {
     }
 }
 
-// 進化バーの生成関数（指定された要素内に並べるように改良）
-function generateEvolutionBar(targetId) {
-    const panel = document.getElementById(targetId);
+// 🧭 プレイ中用の「横一列」進化図を生成
+function createPlayBarUI() {
+    const panel = document.getElementById('evolution-panel');
     panel.innerHTML = ''; 
-    
     for (let i = 0; i <= MAX_LEVEL; i++) {
         const itemEl = document.createElement('div');
         itemEl.className = 'evo-item';
         itemEl.style.top = '50%';
-        itemEl.style.left = `${10 + i * 10}%`; // 均等に美しく並べる計算
+        itemEl.style.left = `${10 + i * 10}%`;
         
         if (i === MAX_LEVEL) {
             itemEl.innerHTML = '<span class="evo-secret">❓</span>';
@@ -435,10 +452,51 @@ function generateEvolutionBar(targetId) {
     }
 }
 
+// 🎬 ★【新規】スタート画面用の「まるい輪っか」進化図を生成する関数
+function createStartCircleUI() {
+    const circle = document.getElementById('start-evolution-circle');
+    circle.innerHTML = ''; 
+    
+    const radius = 60;      // 円の半径
+    const centerX = 85;     // 円の中心X座標 (170px の半分)
+    const centerY = 85;     // 円の中心Y座標
+    
+    for (let i = 0; i <= MAX_LEVEL; i++) {
+        // 時計回りに綺麗に等間隔で並べる計算 (-Math.PI / 2 で真上からスタート)
+        const angle = (i / (MAX_LEVEL + 1)) * Math.PI * 2 - Math.PI / 2;
+        const x = centerX + radius * Math.cos(angle);
+        const y = centerY + radius * Math.sin(angle);
+        
+        const itemEl = document.createElement('div');
+        itemEl.className = 'evo-item';
+        itemEl.style.left = `${x}px`;
+        itemEl.style.top = `${y}px`;
+        
+        if (i === MAX_LEVEL) {
+            itemEl.innerHTML = '<span class="evo-secret">❓</span>';
+        } else {
+            itemEl.style.backgroundImage = `url('${GAME_ITEMS[i].image}')`;
+        }
+        circle.appendChild(itemEl);
+        
+        // アイテムとアイテムの間に矢印を配置
+        const nextAngle = ((i + 0.5) / (MAX_LEVEL + 1)) * Math.PI * 2 - Math.PI / 2;
+        const ax = centerX + radius * Math.cos(nextAngle);
+        const ay = centerY + radius * Math.sin(nextAngle);
+        const arrowEl = document.createElement('div');
+        arrowEl.className = 'evo-arrow';
+        arrowEl.style.left = `${ax}px`;
+        arrowEl.style.top = `${ay}px`;
+        arrowEl.innerText = '→';
+        // 矢印の向きを進化の円形に合わせて回転
+        arrowEl.style.transform = `translate(-50%, -50%) rotate(${nextAngle + Math.PI/2}rad)`;
+        circle.appendChild(arrowEl);
+    }
+}
+
 loadItemVertices();
-// プレイ画面とスタート画面の両方に進化バーを生成
-generateEvolutionBar('evolution-panel');
-generateEvolutionBar('start-evo-container');
+createPlayBarUI();
+createStartCircleUI(); // スタート画面の輪っかを生成
 
 let currentType = 0;
 let nextType = 0;
@@ -523,7 +581,7 @@ function handleDrop(clientX) {
     }, 500);
 }
 
-// タッチ＆マウスイベント
+// イベント関係
 window.addEventListener('touchmove', (e) => {
     if(e.touches.length > 0) handleMove(e.touches[0].clientX);
 });
