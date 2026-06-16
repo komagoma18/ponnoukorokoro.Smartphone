@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-select=none, viewport-fit=cover">
-    <title>ぽんのうゲーム - スマホ版</title>
+    <title>タートルマージゲーム - スマホ完全最適化版</title>
     <style>
         body {
             margin: 0;
@@ -171,7 +171,7 @@
             transform: translate(-50%, -50%);
         }
 
-        /* 🎬 スタート画面（中央揃えのベースを強化） */
+        /* 🎬 スタート画面 */
         #start-screen {
             position: absolute;
             top: 0;
@@ -184,16 +184,15 @@
             background-color: #2c3e50;
             display: flex;
             flex-direction: column;
-            justify-content: center; /* ★要素全体を画面の縦中央に集める */
+            justify-content: center; 
             align-items: center;
             z-index: 200; 
             transition: opacity 0.5s ease; 
         }
         
-        /* 🛠️ ロゴの配置：上部の被りを回避するため引き下げ、マージンを調整 */
         .logo-container {
             margin-top: 0; 
-            margin-bottom: 35px; /* 進化の輪との心地よい間隔 */
+            margin-bottom: 35px; 
             height: 90px;
             display: flex;
             justify-content: center;
@@ -213,7 +212,7 @@
             text-shadow: 3px 3px 0 #000, -3px 3px 0 #000, 3px -3px 0 #000, -3px -3px 0 #000;
         }
 
-        /* 🛠️ 進化の輪：画面の真ん中に中心が来るように配置 */
+        /* 進化の輪 */
         #start-evolution-circle {
             width: 175px;
             height: 175px;
@@ -224,7 +223,7 @@
             border-radius: 50%;
             position: relative;
             box-shadow: 0 8px 25px rgba(0,0,0,0.5);
-            margin: 0 auto; /* 上下の無駄な引っ張りをリセット */
+            margin: 0 auto; 
         }
         #start-evolution-circle .evo-item {
             width: 28px;
@@ -234,7 +233,7 @@
             font-size: 16px;
         }
 
-        /* 🛠️ スタートボタンの配置：輪っかの下に綺麗に並べる */
+        /* スタートボタン */
         .start-btn-container { 
             margin-top: 40px; 
             margin-bottom: 0;
@@ -297,7 +296,6 @@
 <div id="game-layout">
     <div id="blackout-overlay"></div>
 
-    <!-- 上部エリア -->
     <div id="top-sidebar">
         <div class="panel">
             <span class="panel-title">SCORE</span>
@@ -309,10 +307,8 @@
         </div>
     </div>
 
-    <!-- 中央ゲーム本箱 -->
     <div id="game-center"></div>
 
-    <!-- 下部エリア（プレイ中） -->
     <div id="bottom-sidebar">
         <div class="panel" id="next-panel">
             <div id="next-title">NEXT</div>
@@ -322,18 +318,15 @@
         </div>
         
         <div id="evolution-panel">
-            <!-- プレイ中用の横並びバー -->
-        </div>
+            </div>
     </div>
 
-    <!-- スタート画面 -->
     <div id="start-screen">
         <div class="logo-container">
             <img class="game-logo-img" src="logo.png" alt="かめマージ！" onerror="this.style.display='none'; document.getElementById('backup-logo').style.display='block';">
             <div id="backup-logo" class="game-logo-text" style="display:none;">かめマージ！</div>
         </div>
         
-        <!-- 円形の「進化の輪」 -->
         <div id="start-evolution-circle"></div>
 
         <div class="start-btn-container">
@@ -341,7 +334,6 @@
         </div>
     </div>
 
-    <!-- ゲームオーバー画面 -->
     <div id="gameover-screen">
         <h1 style="color: #fff; font-size: 38px; text-shadow: 2px 2px 0 #000; margin-bottom: 10px;">GAME OVER</h1>
         <div style="color: #f1c40f; font-size: 26px; font-weight: bold; margin-bottom: 30px; text-shadow: 2px 2px 0 #000;">
@@ -402,8 +394,11 @@ const leftWall = Bodies.rectangle(10, HEIGHT - (PLAY_AREA_HEIGHT/2) - 10, 20, PL
 const rightWall = Bodies.rectangle(WIDTH - 10, HEIGHT - (PLAY_AREA_HEIGHT/2) - 10, 20, PLAY_AREA_HEIGHT, wallOptions);
 Composite.add(world, [ground, leftWall, rightWall]);
 
+// 🛠️ 描画イベントの拡張：落とす前のプレビューに「白いフチ」を描く
 Events.on(render, 'afterRender', () => {
     const context = render.context;
+    
+    // 赤いデッドラインの描画
     context.beginPath();
     context.setLineDash([5, 5]);
     context.moveTo(10, DEADLINE_Y);
@@ -412,6 +407,23 @@ Events.on(render, 'afterRender', () => {
     context.strokeStyle = gameOver ? '#c0392b' : '#e74c3c';
     context.stroke();
     context.setLineDash([]);
+
+    // ★【新規】落とす前のカメ（previewBody）がある時だけ、その周囲にきれいな白フチを重ね書きする
+    if (window.previewBody && gameStarted && !gameOver) {
+        const pos = window.previewBody.position;
+        const radius = GAME_ITEMS[currentType].size / 2;
+        
+        context.save();
+        context.beginPath();
+        // キャラクターの大きさに合わせて白い真ん丸なフチを描画
+        context.arc(pos.x, pos.y, radius + 2, 0, Math.PI * 2); 
+        context.lineWidth = 3;             // フチの太さ
+        context.strokeStyle = '#ffffff';    // 白色のフチ
+        context.shadowColor = 'rgba(0,0,0,0.4)'; // 少し影をつけてクッキリさせる
+        context.shadowBlur = 6;
+        context.stroke();
+        context.restore();
+    }
 });
 
 function loadItemVertices() {
@@ -526,6 +538,7 @@ function createPreviewItem(gameX) {
 
     if (window.previewBody) Composite.remove(world, window.previewBody);
 
+    // ★【変更】opacity（不透明度）を 0.6 から 1.0 (完全不透明) に変更
     window.previewBody = Bodies.fromVertices(targetX, DEADLINE_Y - 40, GAME_ITEMS[currentType].vertices, {
         isStatic: true,
         isSensor: true,
@@ -535,7 +548,7 @@ function createPreviewItem(gameX) {
                 xScale: GAME_ITEMS[currentType].size / 500,
                 yScale: GAME_ITEMS[currentType].size / 500
             },
-            opacity: 0.6
+            opacity: 1.0 
         }
     });
     Composite.add(world, window.previewBody);
