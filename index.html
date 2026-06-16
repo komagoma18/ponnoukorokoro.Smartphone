@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-select=none, viewport-fit=cover">
-    <title>タートルマージゲーム - スマホ完全最適化版</title>
+    <title>ぽんのうゲーム - スマホ版</title>
     <style>
         body {
             margin: 0;
@@ -394,7 +394,6 @@ const leftWall = Bodies.rectangle(10, HEIGHT - (PLAY_AREA_HEIGHT/2) - 10, 20, PL
 const rightWall = Bodies.rectangle(WIDTH - 10, HEIGHT - (PLAY_AREA_HEIGHT/2) - 10, 20, PLAY_AREA_HEIGHT, wallOptions);
 Composite.add(world, [ground, leftWall, rightWall]);
 
-// 🛠️ 描画イベントの拡張：落とす前のプレビューに「白いフチ」を描く
 Events.on(render, 'afterRender', () => {
     const context = render.context;
     
@@ -407,23 +406,6 @@ Events.on(render, 'afterRender', () => {
     context.strokeStyle = gameOver ? '#c0392b' : '#e74c3c';
     context.stroke();
     context.setLineDash([]);
-
-    // ★【新規】落とす前のカメ（previewBody）がある時だけ、その周囲にきれいな白フチを重ね書きする
-    if (window.previewBody && gameStarted && !gameOver) {
-        const pos = window.previewBody.position;
-        const radius = GAME_ITEMS[currentType].size / 2;
-        
-        context.save();
-        context.beginPath();
-        // キャラクターの大きさに合わせて白い真ん丸なフチを描画
-        context.arc(pos.x, pos.y, radius + 2, 0, Math.PI * 2); 
-        context.lineWidth = 3;             // フチの太さ
-        context.strokeStyle = '#ffffff';    // 白色のフチ
-        context.shadowColor = 'rgba(0,0,0,0.4)'; // 少し影をつけてクッキリさせる
-        context.shadowBlur = 6;
-        context.stroke();
-        context.restore();
-    }
 });
 
 function loadItemVertices() {
@@ -538,7 +520,7 @@ function createPreviewItem(gameX) {
 
     if (window.previewBody) Composite.remove(world, window.previewBody);
 
-    // ★【変更】opacity（不透明度）を 0.6 から 1.0 (完全不透明) に変更
+    // opacity: 1.0 (完全不透明) で綺麗に表示
     window.previewBody = Bodies.fromVertices(targetX, DEADLINE_Y - 40, GAME_ITEMS[currentType].vertices, {
         isStatic: true,
         isSensor: true,
